@@ -20,11 +20,11 @@ defmodule TestHelpers do
 
     fbp_write = flatbuffer_port_write(fbp_schema_reference, input)
 
-    # IO.inspect(fbp_write, label: "FBP WRITE")
+    IO.inspect(fbp_write, label: "FBP WRITE")
 
     eflat_write = Eflatbuffers.write!(input, schema)
 
-    # IO.inspect(eflat_write, label: "EFLAT WRITE")
+    IO.inspect(eflat_write, label: "EFLAT WRITE")
 
     # IO.inspect(Eflatbuffers.read!(eflat_write, schema), label: "EFLAT READ OF EFLAT WRITE")
 

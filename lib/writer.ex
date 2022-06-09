@@ -1,7 +1,7 @@
 defmodule Eflatbuffers.Writer do
   alias Eflatbuffers.Utils
 
-  def write({_, %{default: same}}, same, _, _) do
+  def write({_, %{default: same, use_default: true}}, same, _, _) do
     []
   end
 
@@ -90,11 +90,14 @@ defmodule Eflatbuffers.Writer do
   def write({:enum, options = %{name: enum_name}}, value, path, {tables, _} = schema)
       when is_binary(value) do
     {:enum, enum_options} = Map.get(tables, enum_name)
+
     members = enum_options.members
     {type, type_options} = enum_options.type
     # if we got handed some defaults from outside,
     # we put them in here
     type_options = Map.merge(type_options, options)
+    # |> IO.inspect()
+
     value_atom = :erlang.binary_to_existing_atom(value, :utf8)
     index = Map.get(members, value_atom)
 
@@ -121,7 +124,7 @@ defmodule Eflatbuffers.Writer do
 
             case Map.get(map, String.to_atom(Atom.to_string(name) <> "_type")) do
               nil ->
-                type_acc_new = [{{name}, {:byte, %{default: 0}}} | type_acc]
+                type_acc_new = [{{name}, {:byte, %{default: 0, use_default: true}}} | type_acc]
                 value_acc_new = [0 | value_acc]
                 {type_acc_new, value_acc_new}
 
@@ -130,7 +133,7 @@ defmodule Eflatbuffers.Writer do
                 union_index = Map.get(members, union_type)
 
                 type_acc_new = [
-                  {{name}, {:byte, %{default: 0}}}
+                  {{name}, {:byte, %{default: 0, use_default: true}}}
                   | [{name, {:table, %{name: union_type}}} | type_acc]
                 ]
 

@@ -78,7 +78,11 @@ defmodule Eflatbuffers.Schema do
                 end
               )
 
-            Map.put(acc, key, {:enum, %{type: {type, %{}}, members: hash}})
+            Map.put(
+              acc,
+              key,
+              {:enum, %{type: {type, %{default: 0, use_default: true}}, members: hash}}
+            )
 
           {key, {:union, fields}}, acc ->
             hash =
@@ -107,9 +111,14 @@ defmodule Eflatbuffers.Schema do
         Enum.map(fields, fn
           {key, type} ->
             case Map.get(entities, type) do
-              nil -> {key, {type, %{}}}
-              {{:enum, _enum_type}, _enum_values} -> {key, {:enum, %{name: type}}}
-              {:struct, _struct_fields} -> {key, {:struct, %{name: type}}}
+              nil ->
+                {key, {type, %{}}}
+
+              {{:enum, _enum_type}, _enum_values} ->
+                {key, {:enum, %{name: type, use_default: false}}}
+
+              {:struct, _struct_fields} ->
+                {key, {:struct, %{name: type}}}
             end
         end)
     }
@@ -186,11 +195,11 @@ defmodule Eflatbuffers.Schema do
   end
 
   def decorate_field({type, default}) do
-    {type, %{default: default}}
+    {type, %{default: default, use_default: true}}
   end
 
   def decorate_field(:bool) do
-    {:bool, %{default: false}}
+    {:bool, %{default: false, use_default: true}}
   end
 
   def decorate_field(:string) do
@@ -198,7 +207,7 @@ defmodule Eflatbuffers.Schema do
   end
 
   def decorate_field(type) do
-    {type, %{default: 0}}
+    {type, %{default: 0, use_default: true}}
   end
 
   def is_referenced?({type, _default}) do

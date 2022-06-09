@@ -243,7 +243,13 @@ defmodule Eflatbuffers.Reader do
         map
       ) do
     # for a union byte field named $fieldname$_type is prefixed
-    union_index = read({:byte, %{default: 0}}, data_buffer_pointer + data_offset, data, schema)
+    union_index =
+      read(
+        {:byte, %{default: 0, use_default: true}},
+        data_buffer_pointer + data_offset,
+        data,
+        schema
+      )
 
     case union_index do
       0 ->

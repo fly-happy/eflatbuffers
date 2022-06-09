@@ -140,10 +140,13 @@ defmodule Eflatbuffers.SchemaTest do
       table_inner:
         {:table,
          %{
-           fields: [field: {:int, %{default: 0}}, field_int_default: {:int, %{default: 23}}],
+           fields: [
+             field: {:int, %{default: 0, use_default: true}},
+             field_int_default: {:int, %{default: 23, use_default: true}}
+           ],
            indices: %{
-             field: {0, {:int, %{default: 0}}},
-             field_int_default: {1, {:int, %{default: 23}}}
+             field: {0, {:int, %{default: 0, use_default: true}}},
+             field_int_default: {1, {:int, %{default: 23, use_default: true}}}
            }
          }},
       table_outer:
@@ -174,7 +177,7 @@ defmodule Eflatbuffers.SchemaTest do
         {:enum,
          %{
            members: %{0 => :Red, 1 => :Green, 2 => :Blue, :Blue => 2, :Green => 1, :Red => 0},
-           type: {:byte, %{}}
+           type: {:byte, %{default: 0, use_default: true}}
          }},
       table_outer:
         {:table,

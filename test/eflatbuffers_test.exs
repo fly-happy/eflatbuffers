@@ -91,7 +91,7 @@ defmodule EflatbuffersTest do
 
   test "table with enum" do
     map = %{
-      enum_field: "Green"
+      enum_field: "Red"
     }
 
     assert_full_circle(:enum_field, map)
@@ -129,11 +129,12 @@ defmodule EflatbuffersTest do
   test "table with struct" do
     map = %{
       everything: %{
-        size: 3.0,
-        color: "Red",
         nested: %{
-          age: 32
-        }
+          age: 32,
+          color: "Green"
+        },
+        size: 3.0,
+        color: "Red"
       }
     }
 
