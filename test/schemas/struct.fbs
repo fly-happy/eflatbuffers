@@ -1,4 +1,4 @@
-enum Color : byte { Red, Green, Blue }
+enum Color : int { Red, Green, Blue }
 
 struct Nest {
   age:int;
@@ -6,8 +6,8 @@ struct Nest {
 }
 
 struct Everything {
-  size:float; 
   nested:Nest;
+  size:float;
   color:Color;
 }
 

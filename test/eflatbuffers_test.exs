@@ -129,12 +129,12 @@ defmodule EflatbuffersTest do
   test "table with struct" do
     map = %{
       everything: %{
+        size: 4.0,
         nested: %{
           age: 32,
           color: "Green"
         },
-        size: 3.0,
-        color: "Red"
+        color: "Blue"
       }
     }
 

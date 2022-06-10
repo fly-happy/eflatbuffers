@@ -96,7 +96,6 @@ defmodule Eflatbuffers.Writer do
     # if we got handed some defaults from outside,
     # we put them in here
     type_options = Map.merge(type_options, options)
-    # |> IO.inspect()
 
     value_atom = :erlang.binary_to_existing_atom(value, :utf8)
     index = Map.get(members, value_atom)
