@@ -3,6 +3,7 @@ defmodule Eflatbuffers.Utils do
   def scalar?(:string), do: false
   def scalar?(:vector), do: false
   def scalar?(:table), do: false
+  def scalar?(:struct), do: false
   def scalar?(:enum), do: true
   def scalar?(_), do: true
 

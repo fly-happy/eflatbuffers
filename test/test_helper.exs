@@ -20,30 +20,34 @@ defmodule TestHelpers do
 
     flatc_write = flatbuffer_port_write(flatc_schema_reference, input)
 
-    # IO.inspect(flatc_write, label: "FLATC WRITE")
+    # IO.inspect(flatc_write, label: "FLATC WRITE", limit: :infinity)
 
     eflat_write = Eflatbuffers.write!(input, schema)
 
-    # IO.inspect(eflat_write, label: "EFLAT WRITE")
+    # IO.inspect(eflat_write, label: "EFLAT WRITE", limit: :infinity)
 
-    # IO.inspect(Eflatbuffers.read!(eflat_write, schema), label: "EFLAT READ OF EFLAT WRITE")
+    # IO.inspect(Eflatbuffers.read!(eflat_write, schema),
+    # label: "EFLAT READ OF EFLAT WRITE",
+    # limit: :infinity
+    # )
 
     # IO.inspect(flatbuffer_port_read(flatc_schema_reference, flatc_write),
-    #   label: "FLATC READ OF FLATC WRITE"
+    #   label: "FLATC READ OF FLATC WRITE",
+    #   limit: :infinity
     # )
 
     flatc_read = flatbuffer_port_read(flatc_schema_reference, eflat_write)
 
-    # IO.inspect(flatc_read, label: "FLATC READ OF EFLAT WRITE")
+    # IO.inspect(flatc_read, label: "FLATC READ OF EFLAT WRITE", limit: :infinity)
 
     eflat_read = Eflatbuffers.read!(flatc_write, schema)
 
-    # IO.inspect(eflat_read, label: "EFLAT READ OF FLATC WRITE")
+    # IO.inspect(eflat_read, label: "EFLAT READ OF FLATC WRITE", limit: :infinity)
 
     # FLATC READ OF EFLAT WRITE == EFLAT READ OF FLATC WRITE
     diff = compare_with_defaults(round_floats(flatc_read), round_floats(eflat_read), schema)
 
-    # IO.inspect(diff, label: "DIFF")
+    # IO.inspect(diff, label: "DIFF", limit: :infinity)
 
     assert [] == diff
   end

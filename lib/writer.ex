@@ -169,6 +169,9 @@ defmodule Eflatbuffers.Writer do
       end)
 
     collect_struct_data(names_types, values, path, schema)
+    # pad to largest scalar ingoring structs
+    |> padding_by_largest_scalar()
+    |> List.flatten()
   end
 
   # fail if nothing matches
@@ -193,6 +196,83 @@ defmodule Eflatbuffers.Writer do
       ) do
     scalar_data = write(type, value, [name | path], schema)
     collect_struct_data(types, values, path, schema, [scalar_data | data])
+  end
+
+  def padding_by_largest_scalar(data) do
+    largest_scalar_size =
+      Enum.max_by(data, fn
+        [_ | _] -> 0
+        scalar -> byte_size(scalar)
+      end)
+      |> byte_size()
+
+    chunk_data(data, largest_scalar_size)
+  end
+
+  def chunk_data(data, largest_scalar_size) do
+    next_chunk(data, largest_scalar_size)
+    |> case do
+      {chunked_data, []} ->
+        [chunked_data]
+
+      {chunk, more_data} ->
+        [chunk | chunk_data(more_data, largest_scalar_size)]
+    end
+  end
+
+  def next_chunk(data, largest_scalar_size) do
+    next_chunk(data, largest_scalar_size, [], 0)
+  end
+
+  # if the next piece of data is a nested struct, determine necessary padding for current frame
+  # and move onto data beyond the nested struct
+  def next_chunk(
+        [[_ | _] = nested_struct | tail],
+        largest_scalar_size,
+        current_frame,
+        current_frame_size
+      ) do
+    case current_frame do
+      [] ->
+        {nested_struct, tail}
+
+      frame ->
+        {[pad(Enum.reverse(frame), largest_scalar_size, current_frame_size), nested_struct], tail}
+    end
+  end
+
+  # if no more chunks, pad frame to end and return
+  def next_chunk([] = remaining_data, largest_scalar_size, current_frame, current_frame_size) do
+    {pad(Enum.reverse(current_frame), largest_scalar_size, current_frame_size), remaining_data}
+  end
+
+  # while there is remaining data, take data until scalar size has been reached
+  # if adding next chunk of data will surpass the scalar size, pad the current frame and
+  # continue with chunking the rest of the data
+  def next_chunk(
+        [head | tail] = remaining_data,
+        largest_scalar_size,
+        current_frame,
+        current_frame_size
+      ) do
+    case byte_size(head) + current_frame_size do
+      ^largest_scalar_size ->
+        {[head | current_frame]
+         |> Enum.reverse()
+         |> Enum.join(), tail}
+
+      size when size > largest_scalar_size ->
+        {pad(current_frame, largest_scalar_size, current_frame_size), remaining_data}
+
+      size when size < largest_scalar_size ->
+        next_chunk(tail, largest_scalar_size, [head | current_frame], size)
+    end
+  end
+
+  def pad(frame, largest_scalar_size, current_frame_size) do
+    data = Enum.join(frame)
+    pad = largest_scalar_size - current_frame_size
+    <<data::binary, 0::pad*8>>
   end
 
   # build up [data_buffer, data]

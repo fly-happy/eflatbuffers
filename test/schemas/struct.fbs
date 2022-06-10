@@ -1,14 +1,21 @@
-enum Color : int { Red, Green, Blue }
+enum Color : byte { Red, Green, Blue }
 
 struct Nest {
-  age:int;
+  age:long;
+  color:Color;
+  shortNum:short;
+}
+
+struct AnotherNest {
   color:Color;
 }
 
 struct Everything {
   nested:Nest;
+  anotherNest:AnotherNest;
   size:float;
   color:Color;
+  shortNum:short;
 }
 
 table MyTable {

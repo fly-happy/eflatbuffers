@@ -132,9 +132,12 @@ defmodule EflatbuffersTest do
         size: 4.0,
         nested: %{
           age: 32,
-          color: "Green"
+          color: "Green",
+          shortNum: 2
         },
-        color: "Blue"
+        color: "Blue",
+        anotherNest: %{color: "Green"},
+        shortNum: 2
       }
     }
 
