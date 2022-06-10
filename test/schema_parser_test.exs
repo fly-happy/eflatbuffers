@@ -56,7 +56,19 @@ defmodule Eflatbuffers.SchemaTest do
     Nest: {:struct, [age: :int]}
   }
 
-  @expected_attribute %{State: {:table, [active: {:bool, false}]}}
+  @expected_attribute %{
+    Animal: {:union, [:Dog, :Cat], [priority: 4]},
+    Cat: {:table, [lives: :int]},
+    Color: {{:enum, :byte}, [:Red, :Green, :Blue], [priority: 3]},
+    Dog: {:table, [age: :int]},
+    State:
+      {:table,
+       [
+         {{:active, {:bool, false}}, [{:priority, 1}, :deprecated]},
+         {:color, :Color},
+         {:animal, :Animal}
+       ], [name: "Foo", priority: 2]}
+  }
 
   test "parse simple schema" do
     res =
@@ -108,9 +120,9 @@ defmodule Eflatbuffers.SchemaTest do
       File.read!("test/schemas/parser_attribute.fbs")
       |> Eflatbuffers.Schema.lexer()
       |> :schema_parser.parse()
-      |> IO.inspect()
 
-    assert {:ok, {@expected_attribute, %{attribute: "priority", root_type: :State}}} == res
+    assert {:ok, {@expected_attribute, %{attribute: ["name", "priority"], root_type: :State}}} ==
+             res
   end
 
   test "parse a whole schema" do
