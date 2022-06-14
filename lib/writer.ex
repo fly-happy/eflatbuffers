@@ -170,7 +170,7 @@ defmodule Eflatbuffers.Writer do
       end)
 
     collect_struct_data(names_types, values, path, schema)
-    |> padding_by_largest_scalar()
+    |> struct_alignment()
   end
 
   # fail if nothing matches
@@ -197,13 +197,53 @@ defmodule Eflatbuffers.Writer do
     collect_struct_data(types, values, path, schema, [scalar_data | data])
   end
 
-  def padding_by_largest_scalar(data) do
+  def struct_alignment(data) do
     largest_scalar_size =
-      Enum.map(data, &byte_size/1)
-      |> Enum.max()
+      Enum.max_by(data, fn
+        [_ | _] -> 0
+        scalar -> byte_size(scalar)
+      end)
+      |> byte_size()
 
-    # chunk_data(data, largest_scalar_size)
+    pad_data(data, largest_scalar_size)
   end
+
+  def pad_data([head | tail], largest_scalar_size) do
+    pad_data(tail, largest_scalar_size, head)
+  end
+
+  def pad_data([], largest_scalar_size, padded_data) do
+    # IO.inspect(padded_data, limit: :infinity, label: "PADDED DATA")
+
+    padding = padding(largest_scalar_size, padded_data)
+    <<padded_data::binary, 0::padding*8>>
+  end
+
+  def pad_data([head | tail], largest_scalar_size, padded_data) do
+    # IO.inspect(padded_data, label: "PADDED DATA")
+    # IO.inspect(head, label: "HEAD")
+    # IO.inspect(tail, label: "TAIL")
+    current_element_size = byte_size(head)
+    # IO.inspect(current_element_size, label: "current_element_size")
+    padding = padding(current_element_size, padded_data)
+    # IO.inspect(padding, label: "PADDING")
+    pad_data(tail, largest_scalar_size, <<padded_data::binary, 0::padding*8, head::binary>>)
+  end
+
+  def padding(current_element_size, padded_data) do
+    case rem(byte_size(padded_data), current_element_size) do
+      0 -> 0
+      rem -> current_element_size - rem
+    end
+  end
+
+  # def padding_by_largest_scalar(data) do
+  #   largest_scalar_size =
+  #     Enum.map(data, &byte_size/1)
+  #     |> Enum.max()
+
+  # chunk_data(data, largest_scalar_size)
+  # end
 
   # def pad(frame, largest_scalar_size, current_frame_size) do
   #   data = Enum.join(frame)
