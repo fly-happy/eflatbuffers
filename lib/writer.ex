@@ -170,6 +170,7 @@ defmodule Eflatbuffers.Writer do
       end)
 
     collect_struct_data(names_types, values, path, schema)
+    |> List.flatten()
     |> align_struct()
   end
 
@@ -200,15 +201,14 @@ defmodule Eflatbuffers.Writer do
   def align_struct(data) do
     aligned_data = align_data(data)
 
-    padding =
-      Enum.max_by(data, fn
-        [_ | _] -> 0
-        scalar -> byte_size(scalar)
-      end)
-      |> byte_size()
-      |> padding(aligned_data)
+    largest_scalar_size =
+      Enum.map(data, &byte_size/1)
+      |> Enum.max()
+
+    padding = padding(largest_scalar_size, aligned_data)
 
     <<aligned_data::binary, 0::padding*8>>
+    |> chunk_data(largest_scalar_size)
   end
 
   def align_data([head | tail]) do
@@ -228,6 +228,19 @@ defmodule Eflatbuffers.Writer do
   def padding(current_element_size, padded_data) do
     rem = rem(byte_size(padded_data), current_element_size)
     rem(current_element_size - rem, current_element_size)
+  end
+
+  def chunk_data(data, largest_scalar_size) do
+    chunk_data(data, largest_scalar_size, [])
+  end
+
+  def chunk_data(<<>>, _, chunks) do
+    Enum.reverse(chunks)
+  end
+
+  def chunk_data(data, largest_scalar_size, chunks) do
+    <<chunk::binary-size(largest_scalar_size), rest::binary>> = data
+    chunk_data(rest, largest_scalar_size, [chunk | chunks])
   end
 
   # build up [data_buffer, data]

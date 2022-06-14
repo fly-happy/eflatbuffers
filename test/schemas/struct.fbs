@@ -11,6 +11,7 @@ struct AnotherNest {
 }
 
 struct Everything {
+  integer:int;
   nested:Nest;
   anotherNest:AnotherNest;
   size:float;
