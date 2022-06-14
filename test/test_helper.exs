@@ -20,25 +20,25 @@ defmodule TestHelpers do
 
     flatc_write = flatbuffer_port_write(flatc_schema_reference, input)
 
-    IO.inspect(flatc_write, label: "FLATC WRITE", limit: :infinity)
+    # IO.inspect(flatc_write, label: "FLATC WRITE", limit: :infinity)
 
     eflat_write = Eflatbuffers.write!(input, schema)
 
-    IO.inspect(eflat_write, label: "EFLAT WRITE", limit: :infinity)
+    # IO.inspect(eflat_write, label: "EFLAT WRITE", limit: :infinity)
 
     # IO.inspect(Eflatbuffers.read!(eflat_write, schema),
     # label: "EFLAT READ OF EFLAT WRITE",
     # limit: :infinity
     # )
 
-    IO.inspect(flatbuffer_port_read(flatc_schema_reference, flatc_write),
-      label: "FLATC READ OF FLATC WRITE",
-      limit: :infinity
-    )
+    # IO.inspect(flatbuffer_port_read(flatc_schema_reference, flatc_write),
+    #   label: "FLATC READ OF FLATC WRITE",
+    #   limit: :infinity
+    # )
 
     flatc_read = flatbuffer_port_read(flatc_schema_reference, eflat_write)
 
-    IO.inspect(flatc_read, label: "FLATC READ OF EFLAT WRITE", limit: :infinity)
+    # IO.inspect(flatc_read, label: "FLATC READ OF EFLAT WRITE", limit: :infinity)
 
     eflat_read = Eflatbuffers.read!(flatc_write, schema)
 

@@ -170,7 +170,7 @@ defmodule Eflatbuffers.Writer do
       end)
 
     collect_struct_data(names_types, values, path, schema)
-    |> struct_alignment()
+    |> align_struct()
   end
 
   # fail if nothing matches
@@ -197,59 +197,38 @@ defmodule Eflatbuffers.Writer do
     collect_struct_data(types, values, path, schema, [scalar_data | data])
   end
 
-  def struct_alignment(data) do
-    largest_scalar_size =
+  def align_struct(data) do
+    aligned_data = align_data(data)
+
+    padding =
       Enum.max_by(data, fn
         [_ | _] -> 0
         scalar -> byte_size(scalar)
       end)
       |> byte_size()
+      |> padding(aligned_data)
 
-    pad_data(data, largest_scalar_size)
+    <<aligned_data::binary, 0::padding*8>>
   end
 
-  def pad_data([head | tail], largest_scalar_size) do
-    pad_data(tail, largest_scalar_size, head)
+  def align_data([head | tail]) do
+    align_data(tail, head)
   end
 
-  def pad_data([], largest_scalar_size, padded_data) do
-    # IO.inspect(padded_data, limit: :infinity, label: "PADDED DATA")
-
-    padding = padding(largest_scalar_size, padded_data)
-    <<padded_data::binary, 0::padding*8>>
+  def align_data([], padded_data) do
+    padded_data
   end
 
-  def pad_data([head | tail], largest_scalar_size, padded_data) do
-    # IO.inspect(padded_data, label: "PADDED DATA")
-    # IO.inspect(head, label: "HEAD")
-    # IO.inspect(tail, label: "TAIL")
+  def align_data([head | tail], padded_data) do
     current_element_size = byte_size(head)
-    # IO.inspect(current_element_size, label: "current_element_size")
     padding = padding(current_element_size, padded_data)
-    # IO.inspect(padding, label: "PADDING")
-    pad_data(tail, largest_scalar_size, <<padded_data::binary, 0::padding*8, head::binary>>)
+    align_data(tail, <<padded_data::binary, 0::padding*8, head::binary>>)
   end
 
   def padding(current_element_size, padded_data) do
-    case rem(byte_size(padded_data), current_element_size) do
-      0 -> 0
-      rem -> current_element_size - rem
-    end
+    rem = rem(byte_size(padded_data), current_element_size)
+    rem(current_element_size - rem, current_element_size)
   end
-
-  # def padding_by_largest_scalar(data) do
-  #   largest_scalar_size =
-  #     Enum.map(data, &byte_size/1)
-  #     |> Enum.max()
-
-  # chunk_data(data, largest_scalar_size)
-  # end
-
-  # def pad(frame, largest_scalar_size, current_frame_size) do
-  #   data = Enum.join(frame)
-  #   pad = largest_scalar_size - current_frame_size
-  #   <<data::binary, 0::pad*8>>
-  # end
 
   # build up [data_buffer, data]
   # as part of a table or vector
