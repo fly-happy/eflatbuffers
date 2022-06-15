@@ -4,7 +4,7 @@
 attribute "priority";
 attribute "name";
 
-enum Color (priority: 3) : byte { Red, Green, Blue }
+enum Color : byte { Red, Green, Blue }
 union Animal (priority: 4) { Dog, Cat }
 
 table Dog {
@@ -16,13 +16,14 @@ table Cat {
 }
 
 struct Nest (priority: 3) {
-  color:Color;
+  shortNum:short;
 }
 
-table State (priority: 2, name: Foo) {
+table State (priority: 2, name: "Foo") {
   active:bool = false (deprecated, priority: 1);
-  color:Color;
+  color:Color (priority: 3);
   animal:Animal;
+  nest:Nest;
 }
 
 root_type State;

@@ -166,6 +166,17 @@ defmodule EflatbuffersTest do
     assert_full_circle(:struct_of_structs_of_structs, map)
   end
 
+  test "table with attributes" do
+    map = %{
+      active: true,
+      color: "Green",
+      animal: %{lives: 2},
+      animal_type: "Cat"
+    }
+
+    assert_full_circle(:parser_attribute, map)
+  end
+
   # test "nested vectors (not supported by flatc)" do
   #  map = %{
   #    the_vector: [[1,2,3],[4,5,6]],

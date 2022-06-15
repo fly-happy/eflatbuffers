@@ -58,10 +58,10 @@ defmodule Eflatbuffers.SchemaTest do
     Cat: {:table, [lives: :int]},
     Color: {{:enum, :byte}, [:Red, :Green, :Blue]},
     Dog: {:table, [age: :int]},
-    Nest: {:struct, [color: :Color]},
-    State: {:table, [active: {:bool, false}, color: :Color, animal: :Animal]}
+    Nest: {:struct, [shortNum: :short]},
+    State:
+      {:table, [{:active, {:bool, false}}, {:color, :Color}, {:animal, :Animal}, {:nest, :Nest}]}
   }
-
   test "parse simple schema" do
     res =
       File.read!("test/schemas/parser_simple.fbs")
@@ -115,7 +115,7 @@ defmodule Eflatbuffers.SchemaTest do
 
     assert {:ok,
             {@expected_attribute,
-             %{attributes: ["name", "priority"], root_type: :State, file_identifier: []}}} ==
+             %{attributes: ["name", "priority"], root_type: :State, file_identifier: nil}}} ==
              res
   end
 
@@ -257,7 +257,7 @@ defmodule Eflatbuffers.SchemaTest do
        %{
          attributes: ["priority"],
          root_type: :Monster,
-         file_identifier: []
+         file_identifier: nil
        }}
 
     {:ok, schema} =
