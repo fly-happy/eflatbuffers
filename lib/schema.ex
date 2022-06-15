@@ -1,4 +1,6 @@
 defmodule Eflatbuffers.Schema do
+  alias Eflatbuffers.Utils
+
   @referenced_types [
     :string,
     :byte,
@@ -78,7 +80,11 @@ defmodule Eflatbuffers.Schema do
                 end
               )
 
-            Map.put(acc, key, {:enum, %{type: {type, %{default: 0}}, members: hash}})
+            Map.put(
+              acc,
+              key,
+              {:enum, %{type: {type, %{default: 0, use_default: true}}, members: hash}}
+            )
 
           {key, {:union, fields}}, acc ->
             hash =
@@ -91,10 +97,53 @@ defmodule Eflatbuffers.Schema do
               )
 
             Map.put(acc, key, {:union, %{members: hash}})
+
+          {key, {:struct, fields}}, acc ->
+            Map.put(acc, key, {:struct, struct_options(fields, entities)})
         end
       )
 
     {entities_decorated, options}
+  end
+
+  # There are no relevant options for structs, but keep the shape consistent with everything else
+  def struct_options(fields, entities) do
+    %{
+      fields:
+        Enum.map(fields, fn
+          {key, type} ->
+            case Map.get(entities, type) do
+              nil ->
+                {key, {type, %{}}}
+
+              {{:enum, _enum_type}, _enum_values} ->
+                {key, {:enum, %{name: type, use_default: false}}}
+
+              {:struct, _struct_fields} ->
+                {key, {:struct, %{name: type}}}
+            end
+        end),
+      largest_scalar: find_largest_scalar(fields, entities)
+    }
+  end
+
+  def find_largest_scalar(fields, entities, largest_scalar \\ 0) do
+    Enum.reduce(fields, largest_scalar, fn
+      {_, type}, acc ->
+        size =
+          case Map.get(entities, type) do
+            nil ->
+              Utils.scalar_size(type)
+
+            {{:enum, _enum_type}, _enum_values} ->
+              1
+
+            {:struct, struct_fields} ->
+              find_largest_scalar(struct_fields, entities, acc)
+          end
+
+        if size > acc, do: size, else: acc
+    end)
   end
 
   def table_options(fields, entities) do
@@ -161,15 +210,18 @@ defmodule Eflatbuffers.Schema do
 
       {:union, _} ->
         {:union, %{name: field_value}}
+
+      {:struct, _} ->
+        {:struct, %{name: field_value}}
     end
   end
 
   def decorate_field({type, default}) do
-    {type, %{default: default}}
+    {type, %{default: default, use_default: true}}
   end
 
   def decorate_field(:bool) do
-    {:bool, %{default: false}}
+    {:bool, %{default: false, use_default: true}}
   end
 
   def decorate_field(:string) do
@@ -177,7 +229,7 @@ defmodule Eflatbuffers.Schema do
   end
 
   def decorate_field(type) do
-    {type, %{default: 0}}
+    {type, %{default: 0, use_default: true}}
   end
 
   def is_referenced?({type, _default}) do

@@ -1,7 +1,7 @@
 defmodule Eflatbuffers.Writer do
   alias Eflatbuffers.Utils
 
-  def write({_, %{default: same}}, same, _, _) do
+  def write({_, %{default: same, use_default: true}}, same, _, _) do
     []
   end
 
@@ -121,7 +121,7 @@ defmodule Eflatbuffers.Writer do
 
             case Map.get(map, String.to_atom(Atom.to_string(name) <> "_type")) do
               nil ->
-                type_acc_new = [{{name}, {:byte, %{default: 0}}} | type_acc]
+                type_acc_new = [{{name}, {:byte, %{default: 0, use_default: true}}} | type_acc]
                 value_acc_new = [0 | value_acc]
                 {type_acc_new, value_acc_new}
 
@@ -130,7 +130,7 @@ defmodule Eflatbuffers.Writer do
                 union_index = Map.get(members, union_type)
 
                 type_acc_new = [
-                  {{name}, {:byte, %{default: 0}}}
+                  {{name}, {:byte, %{default: 0, use_default: true}}}
                   | [{name, {:table, %{name: union_type}}} | type_acc]
                 ]
 
@@ -154,9 +154,85 @@ defmodule Eflatbuffers.Writer do
     [vtable_length, data_buffer_length, vtable, springboard, data_buffer, data]
   end
 
+  def write({:struct, %{name: struct_name}}, data, path, {tables, _options} = schema)
+      when is_map(data) and is_atom(struct_name) do
+    {:struct, options} = Map.get(tables, struct_name)
+    fields = options.fields
+
+    {names_types, values} =
+      fields
+      |> Enum.reduce({[], []}, fn
+        {name, type}, {type_acc, value_acc} ->
+          {[{{name}, type} | type_acc], [Map.get(data, name) | value_acc]}
+      end)
+
+    collect_struct_data(names_types, values, path, schema)
+    |> List.flatten()
+    |> align_struct()
+  end
+
   # fail if nothing matches
   def write({type, _options}, data, path, _) do
     throw({:error, {:wrong_type, type, data, Enum.reverse(path)}})
+  end
+
+  def collect_struct_data(types, values, path, schema) do
+    collect_struct_data(types, values, path, schema, [])
+  end
+
+  def collect_struct_data([], [], _path, _schema, data) do
+    data
+  end
+
+  def collect_struct_data(
+        [{name, type} | types],
+        [value | values],
+        path,
+        schema,
+        data
+      ) do
+    scalar_data = write(type, value, [name | path], schema)
+    collect_struct_data(types, values, path, schema, [scalar_data | data])
+  end
+
+  def align_struct(data) do
+    aligned_data = align_data(data)
+
+    largest_scalar_size =
+      Enum.map(data, &byte_size/1)
+      |> Enum.max()
+
+    padding = Utils.padding(largest_scalar_size, byte_size(aligned_data))
+
+    <<aligned_data::binary, 0::padding*8>>
+    |> chunk_data(largest_scalar_size)
+  end
+
+  def align_data([head | tail]) do
+    align_data(tail, head)
+  end
+
+  def align_data([], padded_data) do
+    padded_data
+  end
+
+  def align_data([head | tail], padded_data) do
+    current_element_size = byte_size(head)
+    padding = Utils.padding(current_element_size, byte_size(padded_data))
+    align_data(tail, <<padded_data::binary, 0::padding*8, head::binary>>)
+  end
+
+  def chunk_data(data, largest_scalar_size) do
+    chunk_data(data, largest_scalar_size, [])
+  end
+
+  def chunk_data(<<>>, _, chunks) do
+    Enum.reverse(chunks)
+  end
+
+  def chunk_data(data, largest_scalar_size, chunks) do
+    <<chunk::binary-size(largest_scalar_size), rest::binary>> = data
+    chunk_data(rest, largest_scalar_size, [chunk | chunks])
   end
 
   # build up [data_buffer, data]
@@ -183,6 +259,24 @@ defmodule Eflatbuffers.Writer do
       path,
       schema,
       {[[] | scalar_and_pointers], data, data_offset}
+    )
+  end
+
+  def data_buffer_and_data(
+        [{name, {:struct, _} = type} | types],
+        [value | values],
+        path,
+        schema,
+        {scalar_and_pointers, data, data_offset}
+      ) do
+    scalar_data = write(type, value, [name | path], schema)
+
+    data_buffer_and_data(
+      types,
+      values,
+      path,
+      schema,
+      {[scalar_data | scalar_and_pointers], data, data_offset}
     )
   end
 
@@ -293,10 +387,4 @@ defmodule Eflatbuffers.Writer do
         )
     end
   end
-
-  def scalar?(:string), do: false
-  def scalar?({:vector, _}), do: false
-  def scalar?({:table, _}), do: false
-  def scalar?({:enum, _}), do: true
-  def scalar?(_), do: true
 end

@@ -9,7 +9,7 @@ defmodule EflatbuffersTest do
 
   test "creating test data" do
     expected = <<12, 0, 0, 0, 8, 0, 8, 0, 6, 0, 0, 0, 8, 0, 0, 0, 0, 0, 17, 0>>
-    assert expected == reference_fb(:simple_table, %{field_a: 17})
+    assert expected == flatbuffer_port_write(:simple_table, %{field_a: 17})
   end
 
   ### complete flatbuffer binaries
@@ -124,6 +124,46 @@ defmodule EflatbuffersTest do
     }
 
     assert_full_circle(:table_vector, map)
+  end
+
+  test "table with struct" do
+    map = %{
+      everything: %{
+        color2: "Green",
+        integer: 7,
+        size: 4.0,
+        nested: %{
+          age: 32,
+          color: "Green",
+          shortNum: 2
+        },
+        color: "Blue",
+        anotherNest: %{color: "Green"},
+        shortNum: 2
+      }
+    }
+
+    assert_full_circle(:struct, map)
+  end
+
+  test "table with struct of structs of structs" do
+    map = %{
+      structOfStructsOfStructs: %{
+        color: "Green",
+        nested: %{
+          nested: %{
+            color: "Blue",
+            shortNum: 89,
+            age: 123_982_359
+          },
+          color: "Blue",
+          shortNum: 912
+        },
+        shortNum: 1234
+      }
+    }
+
+    assert_full_circle(:struct_of_structs_of_structs, map)
   end
 
   # test "nested vectors (not supported by flatc)" do

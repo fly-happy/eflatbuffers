@@ -15,31 +15,39 @@ defmodule TestHelpers do
     assert_full_circle(schema_reference, schema_reference, input)
   end
 
-  def assert_full_circle(schema_reference, fbp_schema_reference, input) do
+  def assert_full_circle(schema_reference, flatc_schema_reference, input) do
     schema = Eflatbuffers.Schema.parse!(load_schema(schema_reference))
 
-    fbp_write = flatbuffer_port_write(fbp_schema_reference, input)
+    flatc_write = flatbuffer_port_write(flatc_schema_reference, input)
 
-    # IO.inspect(fbp_write, label: "FBP WRITE")
+    # IO.inspect(flatc_write, label: "FLATC WRITE", limit: :infinity)
 
     eflat_write = Eflatbuffers.write!(input, schema)
 
-    # IO.inspect(eflat_write, label: "EFLAT WRITE")
+    # IO.inspect(eflat_write, label: "EFLAT WRITE", limit: :infinity)
 
-    # IO.inspect(Eflatbuffers.read!(eflat_write, schema), label: "EFLAT READ OF EFLAT WRITE")
+    # IO.inspect(Eflatbuffers.read!(eflat_write, schema),
+    #   label: "EFLAT READ OF EFLAT WRITE",
+    #   limit: :infinity
+    # )
 
-    fbp_read = flatbuffer_port_read(fbp_schema_reference, eflat_write)
+    # IO.inspect(flatbuffer_port_read(flatc_schema_reference, flatc_write),
+    #   label: "FLATC READ OF FLATC WRITE",
+    #   limit: :infinity
+    # )
 
-    # IO.inspect(fbp_read, label: "FBP READ OF EFLAT WRITE")
+    flatc_read = flatbuffer_port_read(flatc_schema_reference, eflat_write)
 
-    eflat_read = Eflatbuffers.read!(fbp_write, schema)
+    # IO.inspect(flatc_read, label: "FLATC READ OF EFLAT WRITE", limit: :infinity)
 
-    # IO.inspect(eflat_read, label: "EFLAT READ OF FBP WRITE")
+    eflat_read = Eflatbuffers.read!(flatc_write, schema)
 
-    # FBP READ OF EFLAT WRITE == EFLAT READ OF FBP WRITE
-    diff = compare_with_defaults(round_floats(fbp_read), round_floats(eflat_read), schema)
+    # IO.inspect(eflat_read, label: "EFLAT READ OF FLATC WRITE", limit: :infinity)
 
-    # IO.inspect(diff, label: "DIFF")
+    # FLATC READ OF EFLAT WRITE == EFLAT READ OF FLATC WRITE
+    diff = compare_with_defaults(round_floats(flatc_read), round_floats(eflat_read), schema)
+
+    # IO.inspect(diff, label: "DIFF", limit: :infinity)
 
     assert [] == diff
   end
