@@ -1,0 +1,25 @@
+enum Color : byte { Red, Green, Blue }
+
+struct BaseStruct {
+  color:Color;
+  shortNum:short;
+  age:long;
+}
+
+struct StructOfStructs {
+  nested:BaseStruct;
+  color:Color;
+  shortNum:short;
+}
+
+struct StructOfStructsOfStructs {
+  color:Color;
+  nested:StructOfStructs;
+  shortNum:short;
+}
+
+table MyTable {
+  structOfStructsOfStructs:StructOfStructsOfStructs;
+}
+
+root_type MyTable;

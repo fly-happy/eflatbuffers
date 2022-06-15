@@ -171,14 +171,16 @@ defmodule Eflatbuffers.Reader do
         struct_largest_scalar
       )
 
+    post_struct_padding = Utils.padding(struct_largest_scalar, struct_size)
+
     read_struct_elements(
       data,
-      pointer + pre_struct_padding + struct_size,
+      pointer + pre_struct_padding + struct_size + post_struct_padding,
       fields,
       schema,
       largest_scalar,
       Map.put(elements, name, value),
-      parent_struct_size + pre_struct_padding + struct_size
+      parent_struct_size + pre_struct_padding + struct_size + post_struct_padding
     )
   end
 

@@ -146,6 +146,26 @@ defmodule EflatbuffersTest do
     assert_full_circle(:struct, map)
   end
 
+  test "table with struct of structs of structs" do
+    map = %{
+      structOfStructsOfStructs: %{
+        color: "Green",
+        nested: %{
+          nested: %{
+            color: "Blue",
+            shortNum: 89,
+            age: 123_982_359
+          },
+          color: "Blue",
+          shortNum: 912
+        },
+        shortNum: 1234
+      }
+    }
+
+    assert_full_circle(:struct_of_structs_of_structs, map)
+  end
+
   # test "nested vectors (not supported by flatc)" do
   #  map = %{
   #    the_vector: [[1,2,3],[4,5,6]],

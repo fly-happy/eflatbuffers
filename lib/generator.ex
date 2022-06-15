@@ -49,6 +49,21 @@ defmodule Eflatbuffers.Generator do
     [Atom.to_string(type), gen_type(schema, type, opts)]
   end
 
+  def gen_type(schema, {:struct, types}, opts) do
+    types
+    |> Enum.map(fn {name, type} ->
+      case gen_type(schema, type, opts) do
+        [union_type, union_data] ->
+          [{String.to_atom(Atom.to_string(name) <> "_type"), union_type}, {name, union_data}]
+
+        data ->
+          {name, data}
+      end
+    end)
+    |> List.flatten()
+    |> Enum.into(%{})
+  end
+
   def gen_type(schema, {:table, types}, opts) do
     types
     |> Enum.filter(fn _ -> :rand.uniform() > opts.skip_key_probability end)

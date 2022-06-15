@@ -21,6 +21,7 @@ struct Everything {
 }
 
 table MyTable {
+  shortNum:short;
   everything:Everything;
 }
 
