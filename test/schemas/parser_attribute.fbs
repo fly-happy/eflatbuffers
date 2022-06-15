@@ -15,10 +15,9 @@ table Cat {
   lives:int;
 }
 
-// TODO
-// struct Nest (priority: 3) {
-//   color:Color;
-// }
+struct Nest (priority: 3) {
+  color:Color;
+}
 
 table State (priority: 2, name: Foo) {
   active:bool = false (deprecated, priority: 1);
