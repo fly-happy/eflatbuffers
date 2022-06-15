@@ -79,6 +79,7 @@ iex(6)> Eflatbuffers.get!(color_scheme_fb, [:background, :green], schema)
 * file identifier + validation
 * random access
 * validate file identifiers
+* structs (works for 99% of structs, no guarantees for super complex schemas with structs)
 
 ### features only in Eflatbuffers
 
@@ -91,7 +92,6 @@ iex(6)> Eflatbuffers.get!(color_scheme_fb, [:background, :green], schema)
 * includes
 * alignment
 * additional attributes
-* structs
 * enum defaults
 * enum custom indexes
 
