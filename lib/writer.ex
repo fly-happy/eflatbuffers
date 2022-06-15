@@ -90,13 +90,11 @@ defmodule Eflatbuffers.Writer do
   def write({:enum, options = %{name: enum_name}}, value, path, {tables, _} = schema)
       when is_binary(value) do
     {:enum, enum_options} = Map.get(tables, enum_name)
-
     members = enum_options.members
     {type, type_options} = enum_options.type
     # if we got handed some defaults from outside,
     # we put them in here
     type_options = Map.merge(type_options, options)
-
     value_atom = :erlang.binary_to_existing_atom(value, :utf8)
     index = Map.get(members, value_atom)
 
@@ -153,7 +151,6 @@ defmodule Eflatbuffers.Writer do
     springboard = <<:erlang.iolist_size(vtable) + 4::little-size(32)>>
     data_buffer_length = <<:erlang.iolist_size([springboard, data_buffer])::little-size(16)>>
     vtable_length = <<:erlang.iolist_size([vtable, springboard])::little-size(16)>>
-
     [vtable_length, data_buffer_length, vtable, springboard, data_buffer, data]
   end
 

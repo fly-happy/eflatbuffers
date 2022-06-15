@@ -91,11 +91,11 @@ defmodule EflatbuffersTest do
 
   test "table with enum" do
     map = %{
-      enum_field: "Red"
+      enum_field: "Green"
     }
 
     assert_full_circle(:enum_field, map)
-    # assert_full_circle(:enum_field, %{})
+    assert_full_circle(:enum_field, %{})
   end
 
   test "vector of enum" do
