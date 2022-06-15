@@ -27,4 +27,9 @@ defmodule Eflatbuffers.Utils do
   end
 
   def extract_scalar_type(type, _), do: type
+
+  def padding(size, pointer) do
+    rem = rem(pointer, size)
+    rem(size - rem, size)
+  end
 end

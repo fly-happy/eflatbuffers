@@ -205,7 +205,7 @@ defmodule Eflatbuffers.Writer do
       Enum.map(data, &byte_size/1)
       |> Enum.max()
 
-    padding = padding(largest_scalar_size, aligned_data)
+    padding = Utils.padding(largest_scalar_size, byte_size(aligned_data))
 
     <<aligned_data::binary, 0::padding*8>>
     |> chunk_data(largest_scalar_size)
@@ -221,13 +221,8 @@ defmodule Eflatbuffers.Writer do
 
   def align_data([head | tail], padded_data) do
     current_element_size = byte_size(head)
-    padding = padding(current_element_size, padded_data)
+    padding = Utils.padding(current_element_size, byte_size(padded_data))
     align_data(tail, <<padded_data::binary, 0::padding*8, head::binary>>)
-  end
-
-  def padding(current_element_size, padded_data) do
-    rem = rem(byte_size(padded_data), current_element_size)
-    rem(current_element_size - rem, current_element_size)
   end
 
   def chunk_data(data, largest_scalar_size) do

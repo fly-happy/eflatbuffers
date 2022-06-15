@@ -1,4 +1,6 @@
 defmodule Eflatbuffers.Schema do
+  alias Eflatbuffers.Utils
+
   @referenced_types [
     :string,
     :byte,
@@ -120,8 +122,28 @@ defmodule Eflatbuffers.Schema do
               {:struct, _struct_fields} ->
                 {key, {:struct, %{name: type}}}
             end
-        end)
+        end),
+      largest_scalar: find_largest_scalar(fields, entities)
     }
+  end
+
+  def find_largest_scalar(fields, entities, largest_scalar \\ 0) do
+    Enum.reduce(fields, largest_scalar, fn
+      {_, type}, acc ->
+        size =
+          case Map.get(entities, type) do
+            nil ->
+              Utils.scalar_size(type)
+
+            {{:enum, _enum_type}, _enum_values} ->
+              1
+
+            {:struct, struct_fields} ->
+              find_largest_scalar(struct_fields, entities, acc)
+          end
+
+        if size > acc, do: size, else: acc
+    end)
   end
 
   def table_options(fields, entities) do

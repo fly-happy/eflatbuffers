@@ -129,9 +129,9 @@ defmodule Eflatbuffers.Reader do
         {tables, _options} = schema
       )
       when is_atom(struct_name) do
-    {:struct, %{fields: fields}} = Map.get(tables, struct_name)
+    {:struct, %{fields: fields, largest_scalar: largest_scalar}} = Map.get(tables, struct_name)
 
-    {values, _} = read_struct_elements(data, vtable_pointer, fields, schema)
+    {values, _} = read_struct_elements(data, vtable_pointer, fields, schema, largest_scalar)
     values
   end
 
@@ -140,11 +140,11 @@ defmodule Eflatbuffers.Reader do
     throw({:error, {:unknown_type, type}})
   end
 
-  def read_struct_elements(data, pointer, fields, schema) do
-    read_struct_elements(data, pointer, fields, schema, %{}, 0)
+  def read_struct_elements(data, pointer, fields, schema, largest_scalar) do
+    read_struct_elements(data, pointer, fields, schema, largest_scalar, %{}, 0)
   end
 
-  def read_struct_elements(_, _, [], _, elements, struct_size) do
+  def read_struct_elements(_, _pointer, [], _, _largest_scalar, elements, struct_size) do
     {elements, struct_size}
   end
 
@@ -153,38 +153,60 @@ defmodule Eflatbuffers.Reader do
         pointer,
         [{name, {:struct, %{name: struct_name}}} | fields],
         {tables, _options} = schema,
+        largest_scalar,
         elements,
         parent_struct_size
       ) do
-    {:struct, %{fields: struct_fields}} = Map.get(tables, struct_name)
-    {value, struct_size} = read_struct_elements(data, pointer, struct_fields, schema)
+    {:struct, %{fields: struct_fields, largest_scalar: struct_largest_scalar}} =
+      Map.get(tables, struct_name)
+
+    pre_struct_padding = Utils.padding(struct_largest_scalar, parent_struct_size)
+
+    {value, struct_size} =
+      read_struct_elements(
+        data,
+        pointer + pre_struct_padding,
+        struct_fields,
+        schema,
+        struct_largest_scalar
+      )
 
     read_struct_elements(
       data,
-      pointer + struct_size,
+      pointer + pre_struct_padding + struct_size,
       fields,
       schema,
+      largest_scalar,
       Map.put(elements, name, value),
-      parent_struct_size + struct_size
+      parent_struct_size + pre_struct_padding + struct_size
     )
   end
 
-  def read_struct_elements(data, pointer, [{name, type} | fields], schema, elements, struct_size) do
-    value = read(type, pointer, data, schema)
-
-    offset =
+  def read_struct_elements(
+        data,
+        pointer,
+        [{name, type} | fields],
+        schema,
+        largest_scalar,
+        elements,
+        struct_size
+      ) do
+    element_size =
       Utils.extract_scalar_type(type, schema)
       |> Utils.scalar_size()
 
-    struct_size = struct_size + offset
+    padding = Utils.padding(element_size, struct_size)
+
+    value = read(type, pointer + padding, data, schema)
 
     read_struct_elements(
       data,
-      pointer + offset,
+      pointer + padding + element_size,
       fields,
       schema,
+      largest_scalar,
       Map.put(elements, name, value),
-      struct_size
+      struct_size + padding + element_size
     )
   end
 

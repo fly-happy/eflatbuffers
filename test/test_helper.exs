@@ -27,8 +27,8 @@ defmodule TestHelpers do
     # IO.inspect(eflat_write, label: "EFLAT WRITE", limit: :infinity)
 
     # IO.inspect(Eflatbuffers.read!(eflat_write, schema),
-    # label: "EFLAT READ OF EFLAT WRITE",
-    # limit: :infinity
+    #   label: "EFLAT READ OF EFLAT WRITE",
+    #   limit: :infinity
     # )
 
     # IO.inspect(flatbuffer_port_read(flatc_schema_reference, flatc_write),
