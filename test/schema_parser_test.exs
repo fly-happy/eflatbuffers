@@ -2,12 +2,9 @@ defmodule Eflatbuffers.SchemaTest do
   use ExUnit.Case
 
   @expected_simple %{
-    namespace: :"SyGame.Play",
-    include: "some_other.fbs",
-    attribute: "priority",
-    file_identifier: "FOOO",
-    file_extension: "baa",
-    root_type: :Monster
+    attributes: ["priority"],
+    root_type: :Monster,
+    file_identifier: "FOOO"
   }
 
   @expected_table %{
@@ -56,7 +53,14 @@ defmodule Eflatbuffers.SchemaTest do
     Nest: {:struct, [age: :int]}
   }
 
-  @expected_attribute %{State: {:table, [active: {:bool, false}]}}
+  @expected_attribute %{
+    Animal: {:union, [:Dog, :Cat]},
+    Cat: {:table, [lives: :int]},
+    Color: {{:enum, :byte}, [:Red, :Green, :Blue]},
+    Dog: {:table, [age: :int]},
+    Nest: {:struct, [color: :Color]},
+    State: {:table, [active: {:bool, false}, color: :Color, animal: :Animal]}
+  }
 
   test "parse simple schema" do
     res =
@@ -109,7 +113,10 @@ defmodule Eflatbuffers.SchemaTest do
       |> Eflatbuffers.Schema.lexer()
       |> :schema_parser.parse()
 
-    assert {:ok, {@expected_attribute, %{attribute: "priority", root_type: :State}}} == res
+    assert {:ok,
+            {@expected_attribute,
+             %{attributes: ["name", "priority"], root_type: :State, file_identifier: []}}} ==
+             res
   end
 
   test "parse a whole schema" do
@@ -248,10 +255,9 @@ defmodule Eflatbuffers.SchemaTest do
          Vec3: {:struct, [x: :float, y: :float, z: :float]}
        },
        %{
-         attribute: "priority",
-         include: "simple_table.fbs",
-         namespace: :MyGame,
-         root_type: :Monster
+         attributes: ["priority"],
+         root_type: :Monster,
+         file_identifier: []
        }}
 
     {:ok, schema} =
