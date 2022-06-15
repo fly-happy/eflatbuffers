@@ -2,6 +2,11 @@
 
 This is a [flatbuffers](https://google.github.io/flatbuffers/) implementation in Elixir.
 
+This fork includes some changes from the original:
+- Encode/decode structs
+- Support defining more than one attribute per schema
+- Soon: append used attributes to parsed schema data
+
 In contrast to existing implementations there is no need to compile code from a schema. Instead, data and schemas are processed dynamically at runtime, offering greater flexibility.
 
 ## Using Eflatbuffers
