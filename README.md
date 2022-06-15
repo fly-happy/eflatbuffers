@@ -91,7 +91,6 @@ iex(6)> Eflatbuffers.get!(color_scheme_fb, [:background, :green], schema)
 * shared vtables
 * includes
 * alignment
-* additional attributes
 * enum defaults
 * enum custom indexes
 
