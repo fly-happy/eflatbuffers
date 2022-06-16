@@ -1,6 +1,3 @@
-// Currently only supports one attribute per schema
-// Does not support built in attributes
-
 attribute "priority";
 attribute "name";
 
@@ -19,7 +16,7 @@ struct Nest (priority: 3) {
   shortNum:short;
 }
 
-table State (priority: 2, name: "Foo") {
+table State (priority: 2, name: "Foo:Bar") {
   active:bool = false (deprecated, priority: 1);
   color:Color (priority: 3);
   animal:Animal;

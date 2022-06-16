@@ -1,5 +1,5 @@
 Nonterminals root definition option fields field key_def value attribute_def attributes struct_fields struct_field struct_key_def atoms atom.
-Terminals  table struct enum union namespace root_type include attribute file_identifier file_extension float int bool string '}' '{' '(' ')' '[' ']' ';' ',' ':' '=' quote.
+Terminals  table struct enum union namespace root_type include attribute file_identifier file_extension float int bool string string_constant '}' '{' '(' ')' '[' ']' ';' ',' ':' '='.
 Rootsymbol root.
 
 root -> definition      : {'$1', #{}}.
@@ -12,10 +12,10 @@ option -> namespace string ';' : {get_name('$1'), get_value_atom('$2')}.
 option -> root_type string ';' : {get_name('$1'), get_value_atom('$2')}.
 
 % options (quoted)
-option -> include quote string quote ';'         : {get_name('$1'), get_value_bin('$3')}.
-option -> attribute quote string quote ';'       : {get_name('$1'), get_value_bin('$3')}.
-option -> file_identifier quote string quote ';' : {get_name('$1'), get_value_bin('$3')}.
-option -> file_extension quote string quote ';'  : {get_name('$1'), get_value_bin('$3')}.
+option -> include string_constant ';'         : {get_name('$1'), get_value_bin('$2')}.
+option -> attribute string_constant ';'       : {get_name('$1'), get_value_bin('$2')}.
+option -> file_identifier string_constant ';' : {get_name('$1'), get_value_bin('$2')}.
+option -> file_extension string_constant ';'  : {get_name('$1'), get_value_bin('$2')}.
 
 % definitions
 definition -> table string '{' fields '}'                             : #{get_value_atom('$2') => {table, '$4'} }.
@@ -41,14 +41,14 @@ key_def -> string ':' string '=' value    : { get_value_atom('$1'), {get_value_a
 
 attributes -> attributes ',' attribute_def.  %ignore
 attributes -> attribute_def.                 %ignore
-attribute_def -> string ':' quote value quote.   %ignore
 attribute_def -> string ':' value.           %ignore
 attribute_def -> string.                     %ignore
 
-value -> int      : get_value('$1').
-value -> float    : get_value('$1').
-value -> bool     : get_value('$1').
-value -> string   : get_value_bin('$1').
+value -> int               : get_value('$1').
+value -> float             : get_value('$1').
+value -> bool              : get_value('$1').
+value -> string_constant   : get_value_bin('$1').
+value -> string            : get_value_bin('$1').
 
 % structs
 struct_fields -> struct_field ';'                : [ '$1' ].

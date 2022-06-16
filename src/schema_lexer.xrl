@@ -8,6 +8,8 @@ WS              = [\s\t]+
 NL              = [\n\r]+
 COMMENT         = //[^\n\r]+
 BLOCK_COMMENT   = /\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/
+STRING_CONSTANT = \".*\"
+COLON           = \:
 
 Rules.
 
@@ -22,14 +24,16 @@ attribute{WS}			  : {token, {attribute, TokenLine}}.
 file_identifier{WS}	: {token, {file_identifier, TokenLine}}.
 file_extension{WS}  : {token, {file_extension, TokenLine}}.
 
-{FLOAT}         : {Val, _} = string:to_float(TokenChars), {token, {float, TokenLine, Val}}.
-{INT}           : {Val, _} = string:to_integer(TokenChars), {token, {int, TokenLine, Val}}.
-{BOOL}          : {token, {int, TokenLine, get_bool(TokenChars)}}.
-{STRING}        : {token, {string, TokenLine, TokenChars}}.
-{WS}            : skip_token.
-{NL}            : skip_token.
-{COMMENT}       : skip_token.
-{BLOCK_COMMENT} : skip_token.
+{FLOAT}           : {Val, _} = string:to_float(TokenChars), {token, {float, TokenLine, Val}}.
+{INT}             : {Val, _} = string:to_integer(TokenChars), {token, {int, TokenLine, Val}}.
+{BOOL}            : {token, {int, TokenLine, get_bool(TokenChars)}}.
+{STRING}          : {token, {string, TokenLine, TokenChars}}.
+{STRING_CONSTANT} : {token, {string_constant, TokenLine, get_string_constant(TokenChars)}}.
+{COLON}           : {token, {':',  TokenLine}}.
+{WS}              : skip_token.
+{NL}              : skip_token.
+{COMMENT}         : skip_token.
+{BLOCK_COMMENT}   : skip_token.
 
 \{    : {token, {'{',  TokenLine}}.
 \}    : {token, {'}',  TokenLine}}.
@@ -39,11 +43,10 @@ file_extension{WS}  : {token, {file_extension, TokenLine}}.
 \]    : {token, {']',  TokenLine}}.
 \;    : {token, {';',  TokenLine}}.
 \,    : {token, {',',  TokenLine}}.
-\:    : {token, {':',  TokenLine}}.
 \=    : {token, {'=',  TokenLine}}.
-\"    : {token, {quote, TokenLine}}.
 
 Erlang code.
 
 get_bool("true") -> true;
 get_bool("false") -> false.
+get_string_constant(TokenChars) -> string:trim(TokenChars, both, "\"").
