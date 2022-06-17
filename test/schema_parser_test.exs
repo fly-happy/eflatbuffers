@@ -218,9 +218,11 @@ defmodule Eflatbuffers.SchemaTest do
              union_vector: {:vector, %{type: {:union, %{name: :union_inner}}}}
            ],
            indices: %{
-             union_field: {0, {:union, %{name: :union_inner}}},
-             union_vector: {2, {:vector, %{type: {:union, %{name: :union_inner}}}}}
-           }
+             union_field: {0, {:union, %{attributes: [], name: :union_inner}}},
+             union_vector:
+               {2, {:vector, %{type: {:union, %{attributes: [], name: :union_inner}}}}}
+           },
+           attributes: []
          }},
       union_inner: {:union, %{members: %{0 => :hello, 1 => :bye, :bye => 1, :hello => 0}}}
     }

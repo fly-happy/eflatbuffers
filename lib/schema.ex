@@ -27,9 +27,9 @@ defmodule Eflatbuffers.Schema do
   end
 
   def parse(schema_str) when is_binary(schema_str) do
-    tokens = lexer(schema_str)
-
-    case :schema_parser.parse(tokens) do
+    lexer(schema_str)
+    |> :schema_parser.parse()
+    |> case do
       {:ok, data} ->
         {:ok, decorate(data)}
 
@@ -171,7 +171,7 @@ defmodule Eflatbuffers.Schema do
     case is_referenced?(field_value) do
       true ->
         case Map.get(entities, field_value) do
-          {:union, _} ->
+          {:union, _, _} ->
             2
 
           _ ->
