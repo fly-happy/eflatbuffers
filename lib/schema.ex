@@ -60,17 +60,13 @@ defmodule Eflatbuffers.Schema do
         # the types to explicitly signify
         # vectors, tables, and enums
         fn
-          {key, {:table, fields}}, acc ->
-            Map.put(
-              acc,
-              key,
-              {:table, table_options(fields, entities)}
-            )
+          {key, {:table, fields, attributes}}, acc ->
+            Map.put(acc, key, {:table, table_options(fields, entities, attributes)})
 
           # for enums we change the list of options
           # into a map for faster lookup when
           # writing and reading
-          {key, {{:enum, type}, fields}}, acc ->
+          {key, {{:enum, type}, fields, attributes}}, acc ->
             hash =
               Enum.reduce(
                 Enum.with_index(fields),
@@ -83,10 +79,15 @@ defmodule Eflatbuffers.Schema do
             Map.put(
               acc,
               key,
-              {:enum, %{type: {type, %{default: 0, use_default: true}}, members: hash}}
+              {:enum,
+               %{
+                 type: {type, %{default: 0, use_default: true}},
+                 members: hash,
+                 attributes: attributes
+               }}
             )
 
-          {key, {:union, fields}}, acc ->
+          {key, {:union, fields, attributes}}, acc ->
             hash =
               Enum.reduce(
                 Enum.with_index(fields),
@@ -96,10 +97,10 @@ defmodule Eflatbuffers.Schema do
                 end
               )
 
-            Map.put(acc, key, {:union, %{members: hash}})
+            Map.put(acc, key, {:union, %{members: hash, attributes: attributes}})
 
-          {key, {:struct, fields}}, acc ->
-            Map.put(acc, key, {:struct, struct_options(fields, entities)})
+          {key, {:struct, fields, attributes}}, acc ->
+            Map.put(acc, key, {:struct, struct_options(fields, entities, attributes)})
         end
       )
 
@@ -107,7 +108,7 @@ defmodule Eflatbuffers.Schema do
   end
 
   # There are no relevant options for structs, but keep the shape consistent with everything else
-  def struct_options(fields, entities) do
+  def struct_options(fields, entities, attributes) do
     %{
       fields:
         Enum.map(fields, fn
@@ -116,14 +117,15 @@ defmodule Eflatbuffers.Schema do
               nil ->
                 {key, {type, %{}}}
 
-              {{:enum, _enum_type}, _enum_values} ->
+              {{:enum, _enum_type}, _enum_values, []} ->
                 {key, {:enum, %{name: type, use_default: false}}}
 
-              {:struct, _struct_fields} ->
+              {:struct, _struct_fields, []} ->
                 {key, {:struct, %{name: type}}}
             end
         end),
-      largest_scalar: find_largest_scalar(fields, entities)
+      largest_scalar: find_largest_scalar(fields, entities),
+      attributes: attributes
     }
   end
 
@@ -135,10 +137,10 @@ defmodule Eflatbuffers.Schema do
             nil ->
               Utils.scalar_size(type)
 
-            {{:enum, _enum_type}, _enum_values} ->
+            {{:enum, _enum_type}, _enum_values, []} ->
               1
 
-            {:struct, struct_fields} ->
+            {:struct, struct_fields, []} ->
               find_largest_scalar(struct_fields, entities, acc)
           end
 
@@ -146,8 +148,9 @@ defmodule Eflatbuffers.Schema do
     end)
   end
 
-  def table_options(fields, entities) do
+  def table_options(fields, entities, attributes) do
     fields_and_indices(fields, entities, {0, [], %{}})
+    |> Map.put(:attributes, attributes)
   end
 
   def fields_and_indices([], _, {_, fields, indices}) do
@@ -155,12 +158,12 @@ defmodule Eflatbuffers.Schema do
   end
 
   def fields_and_indices(
-        [{field_name, field_value} | fields],
+        [{{field_name, field_value}, attributes} | fields],
         entities,
         {index, fields_acc, indices_acc}
       ) do
     index_offset = index_offset(field_value, entities)
-    decorated_type = decorate_field(field_value, entities)
+    decorated_type = decorate_field(field_value, entities, attributes)
     index_new = index + index_offset
     fields_acc_new = [{field_name, decorated_type} | fields_acc]
     indices_acc_new = Map.put(indices_acc, field_name, {index, decorated_type})
@@ -183,17 +186,17 @@ defmodule Eflatbuffers.Schema do
     end
   end
 
-  def decorate_field({:vector, type}, entities) do
-    {:vector, %{type: decorate_field(type, entities)}}
+  def decorate_field({:vector, type}, entities, attributes) do
+    {:vector, %{type: decorate_field(type, entities, attributes)}}
   end
 
-  def decorate_field(field_value, entities) do
+  def decorate_field(field_value, entities, attributes) do
     case is_referenced?(field_value) do
       true ->
         decorate_referenced_field(field_value, entities)
 
       false ->
-        decorate_field(field_value)
+        decorate_field(field_value, attributes)
     end
   end
 
@@ -202,34 +205,34 @@ defmodule Eflatbuffers.Schema do
       nil ->
         throw({:error, {:entity_not_found, field_value}})
 
-      {:table, _} ->
-        {:table, %{name: field_value}}
+      {:table, _, attributes} ->
+        {:table, %{name: field_value, attributes: attributes}}
 
-      {{:enum, _}, _} ->
-        {:enum, %{name: field_value}}
+      {{:enum, _}, _, attributes} ->
+        {:enum, %{name: field_value, attributes: attributes}}
 
-      {:union, _} ->
-        {:union, %{name: field_value}}
+      {:union, _, attributes} ->
+        {:union, %{name: field_value, attributes: attributes}}
 
-      {:struct, _} ->
-        {:struct, %{name: field_value}}
+      {:struct, _, attributes} ->
+        {:struct, %{name: field_value, attributes: attributes}}
     end
   end
 
-  def decorate_field({type, default}) do
-    {type, %{default: default, use_default: true}}
+  def decorate_field({type, default}, attributes) do
+    {type, %{default: default, use_default: true, attributes: attributes}}
   end
 
-  def decorate_field(:bool) do
-    {:bool, %{default: false, use_default: true}}
+  def decorate_field(:bool, attributes) do
+    {:bool, %{default: false, use_default: true, attributes: attributes}}
   end
 
-  def decorate_field(:string) do
-    {:string, %{}}
+  def decorate_field(:string, attributes) do
+    {:string, %{attributes: attributes}}
   end
 
-  def decorate_field(type) do
-    {type, %{default: 0, use_default: true}}
+  def decorate_field(type, attributes) do
+    {type, %{default: 0, use_default: true, attributes: attributes}}
   end
 
   def is_referenced?({type, _default}) do

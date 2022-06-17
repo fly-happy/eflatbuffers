@@ -169,7 +169,7 @@ defmodule EflatbuffersTest do
   test "table with attributes" do
     map = %{
       active: true,
-      color: "Green",
+      color: ["Green"],
       animal: %{lives: 2},
       animal_type: "Cat"
     }
