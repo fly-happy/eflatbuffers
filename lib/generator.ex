@@ -39,19 +39,19 @@ defmodule Eflatbuffers.Generator do
     |> Enum.map(fn _ -> gen_type(schema, type, opts) end)
   end
 
-  def gen_type(_schema, {{:enum, _type}, enum_options}, _opts) do
+  def gen_type(_schema, {{:enum, _type}, enum_options, _}, _opts) do
     [elem] = Enum.take_random(enum_options, 1)
     Atom.to_string(elem)
   end
 
-  def gen_type(schema, {:union, types}, opts) do
+  def gen_type(schema, {:union, types, _}, opts) do
     [type] = Enum.take_random(types, 1)
     [Atom.to_string(type), gen_type(schema, type, opts)]
   end
 
-  def gen_type(schema, {:struct, types}, opts) do
+  def gen_type(schema, {:struct, types, _}, opts) do
     types
-    |> Enum.map(fn {name, type} ->
+    |> Enum.map(fn {{name, type}, _} ->
       case gen_type(schema, type, opts) do
         [union_type, union_data] ->
           [{String.to_atom(Atom.to_string(name) <> "_type"), union_type}, {name, union_data}]
@@ -64,10 +64,10 @@ defmodule Eflatbuffers.Generator do
     |> Enum.into(%{})
   end
 
-  def gen_type(schema, {:table, types}, opts) do
+  def gen_type(schema, {:table, types, _}, opts) do
     types
     |> Enum.filter(fn _ -> :rand.uniform() > opts.skip_key_probability end)
-    |> Enum.map(fn {name, type} ->
+    |> Enum.map(fn {{name, type}, _} ->
       case gen_type(schema, type, opts) do
         [union_type, union_data] ->
           [{String.to_atom(Atom.to_string(name) <> "_type"), union_type}, {name, union_data}]
