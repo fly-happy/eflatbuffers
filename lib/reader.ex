@@ -60,6 +60,16 @@ defmodule Eflatbuffers.Reader do
 
   # complex types
 
+  def read({:utf16, _options}, vtable_pointer, data, _) do
+    <<string_offset::unsigned-little-size(32)>> = read_from_data_buffer(vtable_pointer, data, 32)
+    string_pointer = vtable_pointer + string_offset
+
+    <<_::binary-size(string_pointer), string_length::unsigned-little-size(32),
+      string::binary-size(string_length), _::binary>> = data
+
+    :unicode.characters_to_binary(string, {:utf16, :little}) |> String.trim(<<0>>)
+  end
+
   def read({:string, _options}, vtable_pointer, data, _) do
     <<string_offset::unsigned-little-size(32)>> = read_from_data_buffer(vtable_pointer, data, 32)
     string_pointer = vtable_pointer + string_offset

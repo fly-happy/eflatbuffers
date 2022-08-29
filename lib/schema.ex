@@ -2,6 +2,7 @@ defmodule Eflatbuffers.Schema do
   alias Eflatbuffers.Utils
 
   @referenced_types [
+    :utf16,
     :string,
     :byte,
     :ubyte,
@@ -225,6 +226,10 @@ defmodule Eflatbuffers.Schema do
 
   def decorate_field(:bool, attributes) do
     {:bool, %{default: false, use_default: true, attributes: attributes}}
+  end
+
+  def decorate_field(:utf16, attributes) do
+    {:utf16, %{attributes: attributes}}
   end
 
   def decorate_field(:string, attributes) do
