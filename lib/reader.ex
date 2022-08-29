@@ -99,8 +99,8 @@ defmodule Eflatbuffers.Reader do
       nil ->
         throw({:error, {:not_in_enum, index, members}})
 
-      value_atom ->
-        Atom.to_string(value_atom)
+      {value_atom, index} ->
+        value_atom
     end
   end
 
